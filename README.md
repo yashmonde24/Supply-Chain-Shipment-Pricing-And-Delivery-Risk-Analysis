@@ -8,7 +8,6 @@ one realistic business problem.
 
 **Real dataset reference:** https://www.kaggle.com/datasets/divyeshardeshana/supply-chain-shipment-pricing-data
 
-
 ## Business problem
 
 A health-commodity supply chain organization ships pharmaceuticals and test
@@ -74,10 +73,10 @@ Python -> ai_data_assistant.py  (text-to-SQL: ask questions in plain English, ge
 
 - **Ocean and Truck freight are the slowest/least reliable modes**  
 
-- Zimbabwe and Cote d'Ivoire have the lowest on-time delivery rates, worth a
+- **Zimbabwe and Cote d'Ivoire** have the lowest on-time delivery rates, worth a
   root-cause review with the logistics team.
 
-- Vendor spend is fairly evenly distributed across the top 5 vendors (no
+- **Vendor** spend is fairly evenly distributed across the top 5 vendors (no
   single vendor dominates), but on-time rates vary meaningfully between
   them — useful leverage in vendor negotiations.
 
@@ -86,29 +85,38 @@ Python -> ai_data_assistant.py  (text-to-SQL: ask questions in plain English, ge
   flat (~$22-23) regardless of order size. Worth flagging to procurement: if
   pricing is meant to scale with volume, it currently doesn't.
 
-- Late deliveries aren't evenly spread — they concentrate in specific
+- **Late deliveries aren't evenly spread** — they concentrate in specific
   country/mode/vendor combinations (e.g. Guyana via Air with certain vendors),
   not a general reliability problem. That's a targeted fix, not a systemic one.
-
+  
+**Recommendations**
+- Fix late deliveries where they actually happen. Delays cluster in specific country/mode/vendor combos, not everywhere — start with the late-shipment root cause    list, not a company-wide policy change.
+- Default to Ocean/Truck for non-urgent orders. Air Charter costs ~2x more per kg. Reserve it for genuinely time-sensitive shipments.
+- Weigh cost against reliability, not just cost. Ocean and Truck are cheapest but also slowest/least reliable — build that trade-off into shipping decisions,        don't optimize for price alone.
+- Review Zimbabwe and Cote d'Ivoire specifically. Lowest on-time rates in the dataset — check if it's a customs issue or a vendor/mode problem before assuming       it's unfixable.
+- Use on-time rate as leverage in vendor contracts. Spend is evenly split across top vendors, but reliability isn't — a cheaper vendor with worse on-time            performance isn't actually cheaper.
+- Check if bulk pricing agreements are real or just on paper. No price difference between small and large orders (correlation ~0.01) — worth comparing against       contracted terms.
+- Report delays as specific, not systemic. A handful of combos drive most late shipments — say that plainly, so the fix stays targeted instead of triggering an      unnecessary overhaul.
+- 
 ## AI-powered features
 
 # Purpose : 
-# Let a business user ask plain-English questions about the shipment data and get an answer back, without knowing SQL.
+- Let a business user ask plain-English questions about the shipment data and get an answer back, without knowing SQL.
 
 # Architecture (text-to-SQL, not a general chatbot):
-# - Pull the real table schema from Postgres.
-# - Send the question + schema to Gemini, asking for a single PostgreSQL SELECT statement
-# - VALIDATE the generated SQL before running it - only SELECT is allowed, no DROP/DELETE/UPDATE/INSERT/ALTER/etc, regardless of
-#   the model returns. This is the part that makes this safe to demo: the LLM never gets write access, ever.
-# - Execute the validated query against Postgres.
-# - Ask Gemini to summarize the result in plain English.
+ - Pull the real table schema from Postgres.
+ - Send the question + schema to Gemini, asking for a single PostgreSQL SELECT statement
+- VALIDATE the generated SQL before running it - only SELECT is allowed, no DROP/DELETE/UPDATE/INSERT/ALTER/etc, regardless of
+   the model returns. This is the part that makes this safe to demo: the LLM never gets write access, ever.
+ - Execute the validated query against Postgres.
+ - Ask Gemini to summarize the result in plain English.
 
 # Why integrated LLM model ?
-# - SQL views already answer the core KPIs. 
-# - This tool exists for the follow-up questions that don't have a pre-built view - 
-#     - Which vendor in Vietnam has the worst on-time rate ?
-#     - What's total freight cost for Ocean shipments over $10k?
-# - Ad hoc questions a manager would otherwise have to ask an analyst to write SQL for.
+ - SQL views already answer the core KPIs. 
+ - This tool exists for the follow-up questions that don't have a pre-built view - 
+     - Which vendor in Vietnam has the worst on-time rate ?
+     - What's total freight cost for Ocean shipments over $10k?
+ - Ad hoc questions a manager would otherwise have to ask an analyst to write SQL for.
 
 **AI data assistant** (`ai_data_assistant.py`) — text-to-SQL interface
    for ad hoc questions that don't have a pre-built dashboard view. Full
