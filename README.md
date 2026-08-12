@@ -71,3 +71,4 @@ Why it's here at all: the SQL views already answer the core KPIs. This exists fo
 
 ## 9. Outcomes Preview :
 - Dashboard : https://github.com/yashmonde24/Supply-Chain-Shipment-Pricing-And-Delivery-Risk-Analysis/blob/main/output/Dashboard.pdf
+- LLM Interaction : https://github.com/yashmonde24/Supply-Chain-Shipment-Pricing-And-Delivery-Risk-Analysis/blob/main/output/LLM%20working%20with%20DB.mp4
