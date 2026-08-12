@@ -68,3 +68,6 @@ Lets a business user ask plain-English questions about the data and get an answe
 How it works: pull the real table schema from Postgres, send the question and schema to Gemini, get back a single SELECT statement, validate it before running anything (SELECT-only, hard block on DROP/DELETE/UPDATE/INSERT/ALTER — the model never gets write access, no exceptions), run it, then have Gemini summarize the result in plain English.
 
 Why it's here at all: the SQL views already answer the core KPIs. This exists for the follow-up questions that don't have a pre-built view — "which vendor in Vietnam has the worst on-time rate," "what's total freight cost for Ocean shipments over $10k" — the kind of question a manager would otherwise have to ask an analyst to write SQL for.
+
+## Outcomes Preview :
+- Dashboard : https://github.com/yashmonde24/Supply-Chain-Shipment-Pricing-And-Delivery-Risk-Analysis/blob/main/output/Dashboard.pdf
