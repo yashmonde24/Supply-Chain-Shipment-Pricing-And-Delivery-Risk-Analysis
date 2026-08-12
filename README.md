@@ -55,9 +55,9 @@ On-time delivery is the weak point. 63% of shipments arrive on schedule, meaning
 - The AI data assistant generates SQL from natural language — it's a convenience layer for ad hoc questions, not a replacement for the validated KPI views it sits   on top of.
 
 ## 7. Future Enhancements
-Extend the SQL views to support year-over-year comparison filters directly, rather than relying on the Power BI report for that slicing.
-Add a lightweight alerting layer that flags a shipment as at-risk once it passes its planned lead time without a delivery record.
-Expand the AI data assistant's schema awareness to cover the KPI views directly, so it can answer aggregate questions without regenerating logic already built in SQL.
+- Extend the SQL views to support year-over-year comparison filters directly, rather than relying on the Power BI report for that slicing.
+- Add a lightweight alerting layer that flags a shipment as at-risk once it passes its planned lead time without a delivery record.
+- Expand the AI data assistant's schema awareness to cover the KPI views directly, so it can answer aggregate questions without regenerating logic already built     in SQL.
 
 ## 8. Deliverables
 
