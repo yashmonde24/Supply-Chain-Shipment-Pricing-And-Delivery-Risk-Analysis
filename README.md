@@ -1,58 +1,87 @@
-## Supply Chain Shipment Pricing and Delivery Risk Analysis
+## Supply Chain Vendor & Delivery Performance Analysis
 
 ## 1. Background & Overview
-Health-commodity supply chains move pharmaceuticals and test kits across dozens of countries, through multiple vendors and shipment modes. When something goes wrong, it's rarely one big failure. It's usually a handful of specific vendor-country-mode combinations quietly underperforming while the aggregate numbers look fine.
+A health-supply organization ships medicines and test kits to 15 countries through 11 vendors and 4 shipping modes (Air, Air Charter, Ocean, Truck). Leadership wants shipments to arrive on time without overspending on freight.
 
 This project analyzes shipment pricing and delivery data (structured after the real-world SCMS Supply Chain Shipment Pricing dataset) to answer three questions procurement and logistics leadership actually ask: Are we hitting delivery deadlines? Which vendors and shipment modes are worth the cost? Where is spend concentrated, and is it moving in the right direction?
 
-Dataset reference: https://www.kaggle.com/datasets/divyeshardeshana/supply-chain-shipment-pricing-data
+Problem statement :
+ Only 63% of shipments arrive on time. It isn’t clear whether the delays and freight costs  come from particular countries, vendors or shipping modes or from how the whole operation  runs.
+
+Objective :
+ - Measure on-time delivery, freight cost, and vendor performance.
+ - Find out whether delays are concentrated in a few places or spread everywhere.
+ - Test whether the gaps between countries, vendors, and shipping modes are real or could     be chance.
+ - Show the results in a dashboard, and let non-technical users ask questions in plain        English.
 
 ## 2. Data Structure Overview
 Raw shipment data is loaded as-is into PostgreSQL, then cleaned into a single analysis-ready table. No star schema needed here — one fact table covers it.
 
-Core entity: each row is one shipment line item, tied to a project code, PO/SO number, vendor, country, product group, and shipment mode.
+Each row is one shipment line: country, vendor, product group, shipping mode, order and delivery dates, quantity, price, weight, and freight cost.
+
+What the cleaning step fixed:
+ - 25 duplicate orders removed (6,025 rows down to 6,000)
+ - Inconsistent spelling and spacing in country and vendor names.
+ - Text sitting in number fields (for example "Weight Captured Separately"), turned into      blanks.
+ - Impossible values, such as a zero price or a negative quantity, turned into blanks.
 
 Pipeline:
-create_database_structure.sql — loads raw data into Postgres
-data_cleaning_standardization.sql — dedupes, standardizes text, casts types
-kpi_analysis_view.sql — builds reusable SQL views for reporting
-data_exploration.py / kpi_analysis.py — Python EDA and KPI visualization
-Dashboard.pbix — Power BI data model, DAX, and dashboard
-ai_data_assistant.py — natural-language query layer on top of the same data
+- create_database_structure.sql — loads raw data into Postgres
+- data_cleaning_standardization.sql — dedupes, standardizes text, casts types
+- kpi_analysis_view.sql — builds reusable SQL views for reporting
+- data_exploration.py / kpi_analysis.py — Python EDA and KPI visualization
+- Dashboard.pbix — Power BI data model, DAX, and dashboard
+- ai_data_assistant.py — answers plain-English questions about the data
 
 ## 3. Executive Summary
-On-time delivery is the weak point. 63% of shipments arrive on schedule, meaning over a third don't — the single biggest lever available for improvement. Cost tells a cleaner story: Ocean freight is the cheapest mode, but it's also one of the least reliable, so cheaper isn't automatically better. Delays aren't spread evenly across the business — they cluster in a specific set of country, vendor, and mode combinations, which makes this a targeted fix rather than an organization-wide overhaul. And there's no evidence bulk orders are earning better pricing, which is worth a direct conversation with procurement.
+63% of shipments arrive on time (3,592 of the 5,700 that have a delivery date), so 2,108 were late. The delays are spread across the whole operation. No single country, vendor, or shipping mode explains them.
+
+  - It takes 296 of 561 country, vendor, and mode combinations to account for 80% of late      shipments. The worst combination has only 14 late shipments, under 1% of the total.
+  - Shipping mode barely changes the result. On-time rates run from 60.54% (Ocean) to          64.25% (Air), and freight cost runs from 9.67% to 10.15% of order value. A statistical     test says gaps this small could be chance.
+  - Freight cost follows shipment size. Order quantity and weight together explain about       51% of it.
+  - Ordering more does not earn a lower price. Order size and unit price are unrelated         (correlation 0.009)
 
 ## 4. Insights Deep Dive
-- Delivery performance
-  On-time delivery sits at 63.02% overall. Zimbabwe and Cote d'Ivoire have the lowest on-time rates in the dataset. Ocean and Truck are the slowest, least           reliable  modes.
+- Delivery
+  - On-time rate is 63.02% overall. Haiti is highest at 66.19% and Zimbabwe lowest at          60.21%, a six-point gap across 15 countries.
+  - Air handles 55.0% of shipments and accounts for 53.1% of late ones, so Air is late         about as often as everything else.
 
-- Cost efficiency
-  Ocean freight costs the least as a share of shipment value. Air Charter costs roughly twice as much per kilogram — a real trade-off between speed and cost, not    a straightforward "always choose the cheaper option" decision.
+- Where the delays come from
 
-- Where delays actually come from
-  Late shipments concentrate in specific combinations — a particular vendor, on a particular mode, into a particular country (Guyana via Air with certain vendors,   for example). This isn't a general reliability problem across the board.
+  - A concentration check (Pareto, the "80/20" test) asks how few combinations cause most      delays. Here the answer is many, not few: 296 of 561 combinations are needed to reach      80%. Fixing one vendor or one route would remove only a small slice.
 
-- Vendor performance
-  Spend is spread fairly evenly across the top five vendors — no single vendor dominates. On-time rates between them vary meaningfully, though, which is real        leverage in contract negotiations.
+- Shipping modes
 
-- Pricing behavior
-  No bulk-discount pattern exists. The correlation between order quantity and unit price is 0.009 — effectively zero. Average unit price holds flat around $22–23    regardless of order size.
+  - On-time rate: Air 64.25%, Air Charter 63.11%, Truck 62.15%, Ocean 60.54%.
+  - Freight cost as a share of order value: Air Charter 10.15%, Air 9.93%, Truck 9.78%,        Ocean 9.67%.
+  - Two significance tests (chi-square for on-time rate, ANOVA for freight cost) both came     back "not significant" (p = 0.12 and p = 0.14). The gaps are too small to call real.
+
+- Cost
+
+  - Each extra unit ordered adds about $2.23 to freight cost, and each extra kilogram adds     about $11.19. Quantity is the stronger and more certain driver (linear regression,         5,175 shipments).
+  - Unit price averages $22.54 and stays flat as order size grows.
+
+- Vendors and spend
+
+  - The 11 vendors each receive between $145M and $182M of the $1.83B total. Their average     prices sit between $21.82 and $23.40, and their on-time rates between 60.00% and           66.26%.
+  - Vendors were sorted into four groups (K-means clustering): Best Value (3 vendors),         Premium (2), Budget Risk (2), and Avoid (4). The gaps behind these groups are small,       so the groups are a starting point for conversations, not a verdict.
+  - Spend is also evenly spread across the five product groups, 19% to 21% each..
 
 ## 5. Recommendations
-- Fix late deliveries where they actually happen. Delays cluster in specific vendor/mode/country combos — start there, not with a blanket policy change.
-- Default to Ocean or Truck for non-urgent orders. Reserve Air Charter for shipments where the ~2x cost premium is actually justified.
-- Weigh cost against reliability together. The cheapest mode isn't the most dependable one — build both into shipping decisions.
-- Open a specific review into Zimbabwe and Cote d'Ivoire. Check whether it's a customs issue or a vendor/mode problem before assuming it can't be fixed.
-- Use on-time rate as real leverage in vendor contract renewals, not just as a reporting metric.
-- Compare bulk pricing agreements against what vendors are actually charging — the data shows no volume discount is happening in practice.
-- Report delays as specific, not systemic. A handful of combinations drive most of the problem — say so plainly, so the response stays targeted.
+- Treat late delivery as a company-wide process issue. Look for causes shared across every country, vendor and mode, such as how delivery dates are set and tracked, before replacing any one vendor. Track the on-time rate monthly.
+- Choose the shipping mode by urgency, not by assumed cost or reliability. In this data the modes differ too little in either to justify a rule.
+- Plan freight budgets from order quantity and shipment weight, and negotiate rates on that basis.
+- Do not count on bulk discounts. Compare contracts with the prices actually paid, and ask vendors for volume pricing.
+- Use the four vendor groups as a starting list for contract reviews.
 
 ## 6. Assumptions & Limitations
-- Freight and weight fields contained placeholder text in the raw data (e.g. "Weight Captured Separately"); these were converted to nulls rather than guessed at,    so KPIs involving those fields are based on the subset of shipments with complete data.
-- Lead time is measured from PO-sent-to-vendor date to actual delivery date — it does not include earlier steps like internal approval time before the PO is         placed.
-- This analysis reflects one snapshot of the data. If the underlying dataset is updated or replaced, every number in this README needs to be re-verified against a   fresh pipeline run before being reused in reporting or presentations.
-- The AI data assistant generates SQL from natural language — it's a convenience layer for ad hoc questions, not a replacement for the validated KPI views it sits   on top of.
+- The data is synthetic. If it is replaced with the real SCMS dataset, rerun everything. Every number here will change.
+- The 63% on-time rate covers 5,700 of 6,000 shipments. The other 300 have no delivery date and are left out.
+- Weight or freight cost is missing for about 14% of shipments, so the cost analysis uses the 5,175 shipments with complete data.
+- Lead time counts from the day the order is sent to the vendor to the day of delivery.
+- "Not significant" means the data cannot show a difference, not that none exists. - -Differences between vendors and between countries were not tested.
+- Weight and quantity rise together, so their separate effects on freight cost are hard to pull apart.
+- The AI assistant writes SQL from plain-English questions. Check important answers against the KPI views.
 
 ## 7. Future Enhancements
 - Extend the SQL views to support year-over-year comparison filters directly, rather than relying on the Power BI report for that slicing.
