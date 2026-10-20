@@ -15,7 +15,10 @@ Objective :
  - Show the results in a dashboard, and let non-technical users ask questions in plain        English.
 
 ## 2. Data Structure Overview
-Raw shipment data is loaded as-is into PostgreSQL, then cleaned into a single analysis-ready table. No star schema needed here — one fact table covers it.
+Data layers (medallion pattern on PostgreSQL schemas):
+ - Bronze is raw data loaded as-is.
+ - Silver is the cleaned, into a single analysis-ready table. No star schema needed here  — one fact table covers it.
+ - Gold is the KPI views for reporting and analysis.
 
 Each row is one shipment line: country, vendor, product group, shipping mode, order and delivery dates, quantity, price, weight, and freight cost.
 
@@ -26,9 +29,9 @@ What the cleaning step fixed:
  - Impossible values, such as a zero price or a negative quantity, turned into blanks.
 
 Pipeline:
-- create_database_structure.sql — loads raw data into Postgres
-- data_cleaning_standardization.sql — dedupes, standardizes text, casts types
-- kpi_analysis_view.sql — builds reusable SQL views for reporting
+- create_database_structure.sql(Bronze Layer) — loads raw data into Postgres
+- data_cleaning_standardization(Silver Layer).sql — dedupes, standardizes text, casts types
+- kpi_analysis_view(Gold Layer).sql — builds reusable SQL views for reporting
 - data_exploration.py / kpi_analysis.py — Python EDA and KPI visualization
 - Dashboard.pbix — Power BI data model, DAX, and dashboard
 - ai_data_assistant.py — answers plain-English questions about the data
@@ -47,23 +50,22 @@ Pipeline:
   - Air handles 55.0% of shipments and accounts for 53.1% of late ones, so Air is late         about as often as everything else.
 
 - Where the delays come from
-
-  - A concentration check (Pareto, the "80/20" test) asks how few combinations cause most      delays. Here the answer is many, not few: 296 of 561 combinations are needed to reach      80%. Fixing one vendor or one route would remove only a small slice.
+  - A concentration check (Pareto, the "80/20" test) asks how few combinations cause most      delays. Here the answer is many, not few: 296 of 561 combinations are needed to reach 80%. Fixing one vendor or one route would remove only a small slice.
 
 - Shipping modes
 
   - On-time rate: Air 64.25%, Air Charter 63.11%, Truck 62.15%, Ocean 60.54%.
   - Freight cost as a share of order value: Air Charter 10.15%, Air 9.93%, Truck 9.78%,        Ocean 9.67%.
-  - Two significance tests (chi-square for on-time rate, ANOVA for freight cost) both came     back "not significant" (p = 0.12 and p = 0.14). The gaps are too small to call real.
+  - Two significance tests (chi-square for on-time rate, ANOVA for freight cost) both came  back "not significant" (p = 0.12 and p = 0.14). The gaps are too small to call real.
 
 - Cost
 
-  - Each extra unit ordered adds about $2.23 to freight cost, and each extra kilogram adds     about $11.19. Quantity is the stronger and more certain driver (linear regression,         5,175 shipments).
+  - Each extra unit ordered adds about $2.23 to freight cost, and each extra kilogram adds about $11.19. Quantity is the stronger and more certain driver (linear regression,         5,175 shipments).
   - Unit price averages $22.54 and stays flat as order size grows.
 
 - Vendors and spend
 
-  - The 11 vendors each receive between $145M and $182M of the $1.83B total. Their average     prices sit between $21.82 and $23.40, and their on-time rates between 60.00% and           66.26%.
+  - The 11 vendors each receive between $145M and $182M of the $1.83B total. Their average  prices sit between $21.82 and $23.40, and their on-time rates between 60.00% and           66.26%.
   - Vendors were sorted into four groups (K-means clustering): Best Value (3 vendors),         Premium (2), Budget Risk (2), and Avoid (4). The gaps behind these groups are small,       so the groups are a starting point for conversations, not a verdict.
   - Spend is also evenly spread across the five product groups, 19% to 21% each..
 
