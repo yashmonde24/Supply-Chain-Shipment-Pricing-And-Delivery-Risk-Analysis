@@ -40,7 +40,6 @@ CREATE TABLE raw_shipment_pricing (
 );
 
 -- Loading the CSV 
---
 COPY raw_shipment_pricing FROM 'data/raw_shipment_pricing_data.csv'
 WITH (FORMAT csv, HEADER true, ENCODING 'UTF8');
 
